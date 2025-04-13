@@ -7,7 +7,7 @@ This plugin adds useful customizations to WooCommerce for better functionality a
    Automatically hides the Cash on Delivery (COD) payment option when a specific courier shipping method is selected.
 
 2. **Disable Password Change Email**  
-   Disables email notifications sent to customers when they change their account password.
+   Disables email notifications,  when customers change their account password.
 
 3. **Clickable WhatsApp Link for Phone Numbers**  
    Adds a clickable WhatsApp link below the billing phone number in the admin order page (for Bangladeshi phone numbers only).
