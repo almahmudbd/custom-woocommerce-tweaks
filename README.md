@@ -2,7 +2,7 @@
 A simple Wordpress plugin with few custom WooCommerce tweaks, i have used before.
 This plugin adds useful customizations to WooCommerce for better functionality and user experience.
 
-## Features
+## Current Features
 1. **Disable COD for Courier**  
    Automatically hides the Cash on Delivery (COD) payment option when a specific courier shipping method is selected.
 
