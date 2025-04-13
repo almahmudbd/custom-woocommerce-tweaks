@@ -23,7 +23,8 @@ This plugin adds useful customizations to WooCommerce for better functionality a
    - Enable or disable each feature as per your requirements.
 
 ## Support
-For questions or issues, please contact [almahmud @ sukkarshop](https://thealmahmud.blogspot.com).
+Fix it yourself please :) 
+hehe.
 
 ## License
 This plugin is licensed under the GPL-3.0+.
