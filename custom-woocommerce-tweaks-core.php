@@ -62,5 +62,5 @@ function custom_wa_phone_link_section($order) {
     $wa_link = 'https://wa.me/' . preg_replace('/[^0-9]/', '', $digits);
 
     // Display only the WhatsApp section below the phone number
-    echo '<p><strong>WhatsApp:</strong> <a href="' . esc_url($wa_link) . '" target="_blank" style="color:#2271b1;text-decoration:underline;">' . esc_html($digits) . '</a></p>';
+    echo '<p><strong>WhatsApp:</strong> <br/> <a href="' . esc_url($wa_link) . '" target="_blank" style="color:#2271b1;text-decoration:underline;">' . esc_html($digits) . '</a></p>';
 }
