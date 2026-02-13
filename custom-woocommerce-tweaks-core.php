@@ -4,7 +4,8 @@
  * Disable COD based on the selected shipping method if the setting is enabled.
  */
 add_filter('woocommerce_available_payment_gateways', 'conditionally_disable_cod_for_courier');
-function conditionally_disable_cod_for_courier($available_gateways) {
+function conditionally_disable_cod_for_courier($available_gateways)
+{
     if (get_option('disable_cod_for_courier', 'yes') === 'yes') {
         // Logic to disable COD during checkout
         if (!is_admin() && is_checkout()) {
@@ -26,7 +27,8 @@ function conditionally_disable_cod_for_courier($available_gateways) {
  * Disable password change email notifications if the setting is enabled.
  */
 add_filter('send_password_change_email', 'conditionally_disable_password_email');
-function conditionally_disable_password_email($send) {
+function conditionally_disable_password_email($send)
+{
     if (get_option('disable_password_email', 'yes') === 'yes') {
         return false;
     }
@@ -38,12 +40,14 @@ function conditionally_disable_password_email($send) {
  */
 add_action('woocommerce_admin_order_data_after_billing_address', 'custom_wa_phone_link_section', 10, 1);
 
-function custom_wa_phone_link_section($order) {
+function custom_wa_phone_link_section($order)
+{
     // Get the billing phone number from the order
     $phone = $order->get_billing_phone();
-    
+
     // If there is no phone number, do nothing
-    if (!$phone) return;
+    if (!$phone)
+        return;
 
     // Remove any non-digit characters from the phone number
     $digits = preg_replace('/\D/', '', $phone);
@@ -51,9 +55,11 @@ function custom_wa_phone_link_section($order) {
     // Ensure the phone number is in Bangladeshi format
     if (preg_match('/^01[0-9]{9}$/', $digits)) {
         $digits = '+88' . $digits; // Add country code for Bangladeshi numbers
-    } elseif (preg_match('/^8801[0-9]{9}$/', $digits)) {
+    }
+    elseif (preg_match('/^8801[0-9]{9}$/', $digits)) {
         $digits = '+' . $digits; // Ensure proper international format
-    } else {
+    }
+    else {
         // If the number is not valid for Bangladesh, stop processing
         return;
     }
@@ -63,4 +69,35 @@ function custom_wa_phone_link_section($order) {
 
     // Display only the WhatsApp section below the phone number
     echo '<p><strong>WhatsApp:</strong> <br/> <a href="' . esc_url($wa_link) . '" target="_blank" style="color:#2271b1;text-decoration:underline;">' . esc_html($digits) . '</a></p>';
+}
+/**
+ * Remove UpdraftPlus from admin bar if setting is enabled.
+ */
+add_action('wp_before_admin_bar_render', 'remove_updraft_admin_bar_logic', 999);
+function remove_updraft_admin_bar_logic()
+{
+    if (get_option('remove_updraft_admin_bar_setting', 'no') === 'yes') {
+        global $wp_admin_bar;
+        $wp_admin_bar->remove_menu('updraft_admin_node');
+    }
+}
+
+/**
+ * Validate WooCommerce billing phone number length (11 digits).
+ */
+add_action('woocommerce_checkout_process', 'validate_woocommerce_billing_phone_digits');
+function validate_woocommerce_billing_phone_digits()
+{
+    if (get_option('validate_mobile_number_setting', 'no') === 'yes') {
+        $billing_phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
+
+        if (!empty($billing_phone)) {
+            // Remove any non-digit characters to check actual length
+            $digits = preg_replace('/\D/', '', $billing_phone);
+
+            if (strlen($digits) !== 11) {
+                wc_add_notice('বোলিং ফোন নম্বরটি অবশ্যই ১১ ডিজিটের হতে হবে। (Phone number must be exactly 11 digits)', 'error');
+            }
+        }
+    }
 }

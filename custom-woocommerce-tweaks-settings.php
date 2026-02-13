@@ -3,7 +3,8 @@
  * Add a settings page under WooCommerce menu
  */
 add_action('admin_menu', 'custom_woocommerce_tweaks_add_settings_page');
-function custom_woocommerce_tweaks_add_settings_page() {
+function custom_woocommerce_tweaks_add_settings_page()
+{
     add_submenu_page(
         'woocommerce', // Parent menu slug to add the submenu under WooCommerce.
         'Custom Tweaks Settings', // The page title shown on the settings page.
@@ -17,12 +18,15 @@ function custom_woocommerce_tweaks_add_settings_page() {
 /**
  * Render the settings page
  */
-function custom_woocommerce_tweaks_settings_page() {
+function custom_woocommerce_tweaks_settings_page()
+{
     // Save settings when the form is submitted.
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         update_option('disable_cod_for_courier', isset($_POST['disable_cod_for_courier']) ? 'yes' : 'no');
         update_option('disable_password_email', isset($_POST['disable_password_email']) ? 'yes' : 'no');
         update_option('enable_clickable_phone', isset($_POST['enable_clickable_phone']) ? 'yes' : 'no');
+        update_option('remove_updraft_admin_bar_setting', isset($_POST['remove_updraft_admin_bar_setting']) ? 'yes' : 'no');
+        update_option('validate_mobile_number_setting', isset($_POST['validate_mobile_number_setting']) ? 'yes' : 'no');
         echo '<div class="updated"><p>Settings saved successfully!</p></div>';
     }
 
@@ -30,7 +34,9 @@ function custom_woocommerce_tweaks_settings_page() {
     $disable_cod_for_courier = get_option('disable_cod_for_courier', 'yes');
     $disable_password_email = get_option('disable_password_email', 'yes');
     $enable_clickable_phone = get_option('enable_clickable_phone', 'yes');
-    ?>
+    $remove_updraft_admin_bar_setting = get_option('remove_updraft_admin_bar_setting', 'no');
+    $validate_mobile_number_setting = get_option('validate_mobile_number_setting', 'no');
+?>
     <div class="wrap">
         <h1>Custom WooCommerce Tweaks Settings</h1>
         <form method="post" action="">
@@ -57,6 +63,22 @@ function custom_woocommerce_tweaks_settings_page() {
                     <td>
                         <input type="checkbox" name="enable_clickable_phone" <?php checked($enable_clickable_phone, 'yes'); ?> />
                         <label for="enable_clickable_phone">Make phone numbers clickable for WhatsApp</label>
+                    </td>
+                </tr>
+                <!-- Option to remove Updraft from admin bar -->
+                <tr valign="top">
+                    <th scope="row">Remove Updraft Admin Bar</th>
+                    <td>
+                        <input type="checkbox" name="remove_updraft_admin_bar_setting" <?php checked($remove_updraft_admin_bar_setting, 'yes'); ?> />
+                        <label for="remove_updraft_admin_bar_setting">Hide UpdraftPlus menu from the admin bar</label>
+                    </td>
+                </tr>
+                <!-- Option to validate mobile number length -->
+                <tr valign="top">
+                    <th scope="row">Validate Mobile Number (11 Digits)</th>
+                    <td>
+                        <input type="checkbox" name="validate_mobile_number_setting" <?php checked($validate_mobile_number_setting, 'yes'); ?> />
+                        <label for="validate_mobile_number_setting">Ensure billing phone is exactly 11 digits during checkout</label>
                     </td>
                 </tr>
             </table>
