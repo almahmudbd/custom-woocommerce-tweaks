@@ -96,7 +96,7 @@ function validate_woocommerce_billing_phone_digits()
             $digits = preg_replace('/\D/', '', $billing_phone);
 
             if (strlen($digits) !== 11) {
-                wc_add_notice('বোলিং ফোন নম্বরটি অবশ্যই ১১ ডিজিটের হতে হবে। (Phone number must be exactly 11 digits)', 'error');
+                wc_add_notice('ফোন নম্বর অবশ্যই ১১ ডিজিটের হতে হবে। (Phone number must be 11 digits)', 'error');
             }
         }
     }
