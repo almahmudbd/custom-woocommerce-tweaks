@@ -101,3 +101,52 @@ function validate_woocommerce_billing_phone_digits()
         }
     }
 }
+
+/**
+ * Apply 0.5% discount for Bank Payment
+ */
+add_action('woocommerce_cart_calculate_fees', 'apply_bank_payment_discount', 20, 1);
+function apply_bank_payment_discount($cart)
+{
+    if (is_admin() && !defined('DOING_AJAX')) {
+        return;
+    }
+
+    if (get_option('enable_bank_payment_discount', 'no') !== 'yes') {
+        return;
+    }
+
+    $chosen_payment_method = WC()->session->get('chosen_payment_method');
+
+    // Mange Bank payment discount
+    if ($chosen_payment_method === 'jetpack_custom_gateway_3') {
+        // Calculate 0.5% discount based on cart subtotal
+        $discount_percentage = 0.5;
+        $discount_amount = ($cart->subtotal * $discount_percentage) / 100;
+
+        if ($discount_amount > 0) {
+            $cart->add_fee(__('Bank Payment Discount (0.5%)', 'woocommerce'), -$discount_amount, true);
+        }
+    }
+}
+
+/**
+ * Trigger update checkout on payment method change so the fee applies dynamically.
+ */
+add_action('wp_footer', 'trigger_update_checkout_on_payment_change');
+function trigger_update_checkout_on_payment_change()
+{
+    if (is_checkout() && !is_wc_endpoint_url()) {
+        if (get_option('enable_bank_payment_discount', 'no') === 'yes') {
+?>
+            <script type="text/javascript">
+                jQuery(document).ready(function($) {
+                    $('form.checkout').on('change', 'input[name="payment_method"]', function() {
+                        $('body').trigger('update_checkout');
+                    });
+                });
+            </script>
+            <?php
+        }
+    }
+}

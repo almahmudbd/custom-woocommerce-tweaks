@@ -3,8 +3,8 @@
  * Plugin Name: Custom WooCommerce Tweaks
  * Plugin URI:  https://sukkarshop.com/
  * Description: Hide COD when Courier is selected, disable password change notification, and make billing phone clickable for WhatsApp in admin.
- * Version:     2.1.0
- * Author:      almahmud@sukkarshop
+ * Version:     2.2.0
+ * Author:      almahmud
  * Author URI:  https://thealmahmud.blogspot.com/
  * License:     GPL-3.0+
  */

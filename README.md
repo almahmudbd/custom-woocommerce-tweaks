@@ -12,6 +12,12 @@ This plugin adds useful customizations to WooCommerce for better functionality a
 3. **Clickable WhatsApp Link for Phone Numbers**  
    Adds a clickable WhatsApp link below the billing phone number in the admin order page (for Bangladeshi phone numbers only).
 
+4. **Phone number validation**   
+   Validates phone numbers to ensure they are in the correct format.
+
+5. **Customize registration email**   
+   Restricts the registration email for preventing spamming.
+
 ## Installation
 1. Download the plugin.
 2. Upload the plugin to the `/wp-content/plugins/` directory.

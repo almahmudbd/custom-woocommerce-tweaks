@@ -27,6 +27,7 @@ function custom_woocommerce_tweaks_settings_page()
         update_option('enable_clickable_phone', isset($_POST['enable_clickable_phone']) ? 'yes' : 'no');
         update_option('remove_updraft_admin_bar_setting', isset($_POST['remove_updraft_admin_bar_setting']) ? 'yes' : 'no');
         update_option('validate_mobile_number_setting', isset($_POST['validate_mobile_number_setting']) ? 'yes' : 'no');
+        update_option('enable_bank_payment_discount', isset($_POST['enable_bank_payment_discount']) ? 'yes' : 'no');
         echo '<div class="updated"><p>Settings saved successfully!</p></div>';
     }
 
@@ -36,6 +37,7 @@ function custom_woocommerce_tweaks_settings_page()
     $enable_clickable_phone = get_option('enable_clickable_phone', 'yes');
     $remove_updraft_admin_bar_setting = get_option('remove_updraft_admin_bar_setting', 'no');
     $validate_mobile_number_setting = get_option('validate_mobile_number_setting', 'no');
+    $enable_bank_payment_discount = get_option('enable_bank_payment_discount', 'no');
 ?>
     <div class="wrap">
         <h1>Custom WooCommerce Tweaks Settings</h1>
@@ -79,6 +81,14 @@ function custom_woocommerce_tweaks_settings_page()
                     <td>
                         <input type="checkbox" name="validate_mobile_number_setting" <?php checked($validate_mobile_number_setting, 'yes'); ?> />
                         <label for="validate_mobile_number_setting">Ensure billing phone is exactly 11 digits during checkout</label>
+                    </td>
+                </tr>
+                <!-- Option to enable bank payment discount -->
+                <tr valign="top">
+                    <th scope="row">Enable Bank Payment Discount (0.5%)</th>
+                    <td>
+                        <input type="checkbox" name="enable_bank_payment_discount" <?php checked($enable_bank_payment_discount, 'yes'); ?> />
+                        <label for="enable_bank_payment_discount">Add 0.5% discount when Bank Payment selected</label>
                     </td>
                 </tr>
             </table>
