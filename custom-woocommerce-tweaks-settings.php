@@ -28,6 +28,9 @@ function custom_woocommerce_tweaks_settings_page()
         update_option('remove_updraft_admin_bar_setting', isset($_POST['remove_updraft_admin_bar_setting']) ? 'yes' : 'no');
         update_option('validate_mobile_number_setting', isset($_POST['validate_mobile_number_setting']) ? 'yes' : 'no');
         update_option('enable_bank_payment_discount', isset($_POST['enable_bank_payment_discount']) ? 'yes' : 'no');
+        update_option('disable_cart_page', isset($_POST['disable_cart_page']) ? 'yes' : 'no');
+        update_option('show_full_cart_on_checkout', isset($_POST['show_full_cart_on_checkout']) ? 'yes' : 'no');
+        update_option('restrict_email_domains_setting', isset($_POST['restrict_email_domains_setting']) ? 'yes' : 'no');
         echo '<div class="updated"><p>Settings saved successfully!</p></div>';
     }
 
@@ -38,6 +41,9 @@ function custom_woocommerce_tweaks_settings_page()
     $remove_updraft_admin_bar_setting = get_option('remove_updraft_admin_bar_setting', 'no');
     $validate_mobile_number_setting = get_option('validate_mobile_number_setting', 'no');
     $enable_bank_payment_discount = get_option('enable_bank_payment_discount', 'no');
+    $disable_cart_page = get_option('disable_cart_page', 'no');
+    $show_full_cart_on_checkout = get_option('show_full_cart_on_checkout', 'no');
+    $restrict_email_domains_setting = get_option('restrict_email_domains_setting', 'no');
 ?>
     <div class="wrap">
         <h1>Custom WooCommerce Tweaks Settings</h1>
@@ -89,6 +95,30 @@ function custom_woocommerce_tweaks_settings_page()
                     <td>
                         <input type="checkbox" name="enable_bank_payment_discount" <?php checked($enable_bank_payment_discount, 'yes'); ?> />
                         <label for="enable_bank_payment_discount">Add 0.5% discount when Bank Payment selected</label>
+                    </td>
+                </tr>
+                <!-- Option to disable the cart page -->
+                <tr valign="top">
+                    <th scope="row">Disable Cart Page</th>
+                    <td>
+                        <input type="checkbox" name="disable_cart_page" <?php checked($disable_cart_page, 'yes'); ?> />
+                        <label for="disable_cart_page">Redirect the cart page to checkout</label>
+                    </td>
+                </tr>
+                <!-- Option to show the full cart on checkout -->
+                <tr valign="top">
+                    <th scope="row">Show Full Cart on Checkout</th>
+                    <td>
+                        <input type="checkbox" name="show_full_cart_on_checkout" <?php checked($show_full_cart_on_checkout, 'yes'); ?> />
+                        <label for="show_full_cart_on_checkout">Display the full editable cart above the checkout form</label>
+                    </td>
+                </tr>
+                <!-- Option to restrict registration to specific email domains -->
+                <tr valign="top">
+                    <th scope="row">Restrict Registration Email Domains</th>
+                    <td>
+                        <input type="checkbox" name="restrict_email_domains_setting" <?php checked($restrict_email_domains_setting, 'yes'); ?> />
+                        <label for="restrict_email_domains_setting">Only allow registration with gmail, yahoo, hotmail or outlook addresses</label>
                     </td>
                 </tr>
             </table>

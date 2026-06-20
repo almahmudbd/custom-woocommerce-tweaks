@@ -150,3 +150,30 @@ function trigger_update_checkout_on_payment_change()
         }
     }
 }
+
+/**
+ * Redirect the cart page to checkout (disable standalone cart page).
+ */
+add_action('template_redirect', 'redirect_cart_page_to_checkout');
+function redirect_cart_page_to_checkout()
+{
+    if (get_option('disable_cart_page', 'no') === 'yes') {
+        if (is_cart() && ! is_admin()) {
+            wp_safe_redirect(wc_get_checkout_url());
+            exit;
+        }
+    }
+}
+
+/**
+ * Show the full editable cart on the checkout page (above the form).
+ */
+add_action('woocommerce_before_checkout_form', 'show_full_cart_on_checkout_page', 5);
+function show_full_cart_on_checkout_page()
+{
+    if (get_option('show_full_cart_on_checkout', 'no') === 'yes') {
+        if (WC()->cart && ! WC()->cart->is_empty()) {
+            echo do_shortcode('[woocommerce_cart]');
+        }
+    }
+}
