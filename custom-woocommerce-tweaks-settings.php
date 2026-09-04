@@ -49,12 +49,12 @@ function custom_woocommerce_tweaks_settings_page()
         <h1>Custom WooCommerce Tweaks Settings</h1>
         <form method="post" action="">
             <table class="form-table">
-                <!-- Option to disable COD for courier -->
+                <!-- Option to disable COD for courier / post office -->
                 <tr valign="top">
-                    <th scope="row">Disable COD for Courier</th>
+                    <th scope="row">Disable COD for Courier &amp; Post Office</th>
                     <td>
                         <input type="checkbox" name="disable_cod_for_courier" <?php checked($disable_cod_for_courier, 'yes'); ?> />
-                        <label for="disable_cod_for_courier">Hide COD when Courier shipping is selected</label>
+                        <label for="disable_cod_for_courier">Hide COD when Courier or Post Office shipping is selected</label>
                     </td>
                 </tr>
                 <!-- Option to disable password change email notifications -->

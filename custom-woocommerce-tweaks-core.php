@@ -12,10 +12,14 @@ function conditionally_disable_cod_for_courier($available_gateways)
             $chosen_methods = WC()->session->get('chosen_shipping_methods');
             $chosen_shipping = !empty($chosen_methods) ? $chosen_methods[0] : '';
 
-            $courier_shipping_method_id = 'advanced_flat_rate_shipping:18800'; // Update this to your courier method ID.
+            // Shipping methods that should not offer COD.
+            $no_cod_shipping_method_ids = array(
+                'advanced_flat_rate_shipping:18800', // Courier
+                'advanced_flat_rate_shipping:22159', // Post Office
+            );
             $cod_payment_method_id = 'jetpack_custom_gateway_2'; // COD payment method ID.
 
-            if ($chosen_shipping === $courier_shipping_method_id && isset($available_gateways[$cod_payment_method_id])) {
+            if (in_array($chosen_shipping, $no_cod_shipping_method_ids, true) && isset($available_gateways[$cod_payment_method_id])) {
                 unset($available_gateways[$cod_payment_method_id]);
             }
         }
@@ -42,6 +46,10 @@ add_action('woocommerce_admin_order_data_after_billing_address', 'custom_wa_phon
 
 function custom_wa_phone_link_section($order)
 {
+    if (get_option('enable_clickable_phone', 'yes') !== 'yes') {
+        return;
+    }
+
     // Get the billing phone number from the order
     $phone = $order->get_billing_phone();
 
