@@ -17,7 +17,7 @@ function conditionally_disable_cod_for_courier($available_gateways)
                 'advanced_flat_rate_shipping:18800', // Courier
                 'advanced_flat_rate_shipping:22159', // Post Office
             );
-            $cod_payment_method_id = 'jetpack_custom_gateway_2'; // COD payment method ID.
+            $cod_payment_method_id = 'bd_partial_cod'; // COD payment method ID.
 
             if (in_array($chosen_shipping, $no_cod_shipping_method_ids, true) && isset($available_gateways[$cod_payment_method_id])) {
                 unset($available_gateways[$cod_payment_method_id]);
