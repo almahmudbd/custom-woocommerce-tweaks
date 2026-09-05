@@ -3,7 +3,7 @@
  * Plugin Name: Custom WooCommerce Tweaks
  * Plugin URI:  https://sukkarshop.com/
  * Description: A collection of WooCommerce/WordPress tweaks (COD rules, checkout & cart tweaks, admin helpers), each toggleable from WooCommerce > Tweaks Settings.
- * Version:     3.1
+ * Version:     3.2
  * Author:      almahmud
  * Author URI:  https://thealmahmud.blogspot.com/
  * License:     GPL-3.0+
