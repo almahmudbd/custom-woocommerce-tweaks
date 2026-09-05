@@ -463,3 +463,217 @@ function cwt_conditionally_disable_order_notes_section( $enabled ) {
 
     return $enabled;
 }
+
+/**
+ * Override country locale data so WooCommerce's address-i18n.js uses our custom
+ * labels/placeholders/required states instead of reverting to defaults on country change.
+ *
+ * This is the fix for the "label flashes custom then reverts to English" issue.
+ * WooCommerce JS fetches locale data and re-applies it on country change.
+ */
+add_filter( 'woocommerce_get_country_locale', 'cwt_override_country_locale', 9999 );
+function cwt_override_country_locale( $locales ) {
+    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+        return $locales;
+    }
+
+    $settings = cwt_get_checkout_fields_settings();
+    if ( empty( $settings ) ) {
+        return $locales;
+    }
+
+    // Map billing field keys to their locale short keys
+    $locale_field_map = array(
+        'billing_first_name' => 'first_name',
+        'billing_last_name'  => 'last_name',
+        'billing_company'    => 'company',
+        'billing_address_1'  => 'address_1',
+        'billing_address_2'  => 'address_2',
+        'billing_city'       => 'city',
+        'billing_state'      => 'state',
+        'billing_postcode'   => 'postcode',
+    );
+
+    $overrides = array();
+    foreach ( $locale_field_map as $billing_key => $locale_key ) {
+        if ( ! isset( $settings[ $billing_key ] ) ) {
+            continue;
+        }
+        $conf = $settings[ $billing_key ];
+        $field_override = array();
+
+        if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
+            $field_override['label'] = sanitize_text_field( $conf['label'] );
+        }
+        if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
+            $field_override['placeholder'] = sanitize_text_field( $conf['placeholder'] );
+        }
+        if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
+            $field_override['required'] = ( $conf['required'] === 'yes' );
+        }
+        if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
+            $field_override['hidden']   = true;
+            $field_override['required'] = false;
+        }
+
+        if ( ! empty( $field_override ) ) {
+            $overrides[ $locale_key ] = $field_override;
+        }
+    }
+
+    if ( empty( $overrides ) ) {
+        return $locales;
+    }
+
+    // Inject our overrides into every country's locale
+    foreach ( $locales as $country_code => $country_locale ) {
+        foreach ( $overrides as $locale_key => $override_data ) {
+            if ( ! isset( $locales[ $country_code ][ $locale_key ] ) ) {
+                $locales[ $country_code ][ $locale_key ] = array();
+            }
+            $locales[ $country_code ][ $locale_key ] = array_merge(
+                $locales[ $country_code ][ $locale_key ],
+                $override_data
+            );
+        }
+    }
+
+    return $locales;
+}
+
+/**
+ * Override the default country locale (used when no specific country locale is found).
+ */
+add_filter( 'woocommerce_get_country_locale_default', 'cwt_override_country_locale_default', 9999 );
+function cwt_override_country_locale_default( $defaults ) {
+    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+        return $defaults;
+    }
+
+    $settings = cwt_get_checkout_fields_settings();
+    if ( empty( $settings ) ) {
+        return $defaults;
+    }
+
+    $locale_field_map = array(
+        'billing_first_name' => 'first_name',
+        'billing_last_name'  => 'last_name',
+        'billing_company'    => 'company',
+        'billing_address_1'  => 'address_1',
+        'billing_address_2'  => 'address_2',
+        'billing_city'       => 'city',
+        'billing_state'      => 'state',
+        'billing_postcode'   => 'postcode',
+    );
+
+    foreach ( $locale_field_map as $billing_key => $locale_key ) {
+        if ( ! isset( $settings[ $billing_key ] ) ) {
+            continue;
+        }
+        $conf = $settings[ $billing_key ];
+
+        if ( ! isset( $defaults[ $locale_key ] ) ) {
+            $defaults[ $locale_key ] = array();
+        }
+
+        if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
+            $defaults[ $locale_key ]['label'] = sanitize_text_field( $conf['label'] );
+        }
+        if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
+            $defaults[ $locale_key ]['placeholder'] = sanitize_text_field( $conf['placeholder'] );
+        }
+        if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
+            $defaults[ $locale_key ]['required'] = ( $conf['required'] === 'yes' );
+        }
+    }
+
+    return $defaults;
+}
+
+/**
+ * Output frontend JS on checkout to forcefully re-apply custom labels after
+ * WooCommerce's AJAX update_checkout completes. This catches phone, email,
+ * and any fields not covered by locale data.
+ */
+add_action( 'wp_footer', 'cwt_checkout_fields_frontend_js', 9999 );
+function cwt_checkout_fields_frontend_js() {
+    if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || is_wc_endpoint_url() ) {
+        return;
+    }
+    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+        return;
+    }
+
+    $settings = cwt_get_checkout_fields_settings();
+    if ( empty( $settings ) ) {
+        return;
+    }
+
+    // Build JS data for fields that have custom labels/placeholders
+    $js_overrides = array();
+    foreach ( $settings as $field_key => $conf ) {
+        $override = array();
+        if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
+            $override['label'] = sanitize_text_field( $conf['label'] );
+        }
+        if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
+            $override['placeholder'] = sanitize_text_field( $conf['placeholder'] );
+        }
+        if ( ! empty( $override ) ) {
+            $js_overrides[ $field_key ] = $override;
+        }
+    }
+
+    if ( empty( $js_overrides ) ) {
+        return;
+    }
+    ?>
+    <script type="text/javascript">
+    (function() {
+        var cwtOverrides = <?php echo wp_json_encode( $js_overrides ); ?>;
+
+        function cwtApplyOverrides() {
+            for (var fieldKey in cwtOverrides) {
+                if (!cwtOverrides.hasOwnProperty(fieldKey)) continue;
+                var data = cwtOverrides[fieldKey];
+                var field = document.getElementById(fieldKey + '_field');
+                if (!field) continue;
+
+                if (data.label) {
+                    var labelEl = field.querySelector('label');
+                    if (labelEl) {
+                        // Preserve the <abbr> (required asterisk) if present
+                        var abbr = labelEl.querySelector('abbr');
+                        labelEl.textContent = data.label;
+                        if (abbr) {
+                            labelEl.appendChild(document.createTextNode(' '));
+                            labelEl.appendChild(abbr);
+                        }
+                    }
+                }
+
+                if (data.placeholder) {
+                    var input = field.querySelector('input, textarea, select');
+                    if (input && (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA')) {
+                        input.setAttribute('placeholder', data.placeholder);
+                    }
+                }
+            }
+        }
+
+        // Apply immediately
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', cwtApplyOverrides);
+        } else {
+            cwtApplyOverrides();
+        }
+
+        // Re-apply after WooCommerce AJAX events
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document.body).on('updated_checkout', cwtApplyOverrides);
+            jQuery(document.body).on('country_to_state_changed', cwtApplyOverrides);
+        }
+    })();
+    </script>
+    <?php
+}
