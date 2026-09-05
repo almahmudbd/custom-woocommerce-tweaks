@@ -23,3 +23,14 @@ CLAUDE.md
 .kiro/
 .vscode/
 *.mcp.json
+
+# Auto-generated AI agent exclusions
+AGENTS.md
+MEMORY.md
+GEMINI.md
+.windsurf/
+.clinerules
+.cursor/active-context.md
+.brainsync/memory.jsonl
+.brainsync/sync-state.json
+.brainsync/.context-key
