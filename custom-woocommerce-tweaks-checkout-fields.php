@@ -331,26 +331,71 @@ function cwt_checkout_fields_frontend_js() {
     <script type="text/javascript">
     (function(){
         var O = <?php echo wp_json_encode( $js_overrides ); ?>;
-        function apply(){
-            for(var k in O){
-                if(!O.hasOwnProperty(k))continue;
-                var f=document.getElementById(k+'_field');
-                if(!f)continue;
-                if(O[k].label){
-                    var l=f.querySelector('label');
-                    if(l){var a=l.querySelector('abbr');l.textContent=O[k].label;if(a){l.appendChild(document.createTextNode(' '));l.appendChild(a);}}
+
+        function cwtApply() {
+            for (var k in O) {
+                if (!O.hasOwnProperty(k)) continue;
+                var f = document.getElementById(k + '_field');
+                if (!f) continue;
+
+                if (O[k].label) {
+                    var l = f.querySelector('label');
+                    if (l) {
+                        var abbr = l.querySelector('abbr');
+                        l.textContent = O[k].label;
+                        if (abbr) {
+                            l.appendChild(document.createTextNode(' '));
+                            l.appendChild(abbr);
+                        }
+                    }
                 }
-                if(O[k].placeholder){
-                    var i=f.querySelector('input,textarea');
-                    if(i&&(i.tagName==='INPUT'||i.tagName==='TEXTAREA'))i.setAttribute('placeholder',O[k].placeholder);
+
+                if (O[k].placeholder) {
+                    var inp = f.querySelector('input, textarea');
+                    if (inp && (inp.tagName === 'INPUT' || inp.tagName === 'TEXTAREA')) {
+                        inp.setAttribute('placeholder', O[k].placeholder);
+                    }
                 }
             }
         }
-        document.readyState==='loading'?document.addEventListener('DOMContentLoaded',apply):apply();
-        if(typeof jQuery!=='undefined'){
-            jQuery(document.body).on('updated_checkout country_to_state_changed',apply);
+
+        /* Deferred apply — runs after all synchronous handlers on the same event */
+        function cwtDeferApply() {
+            setTimeout(cwtApply, 50);
+        }
+
+        /* Initial apply on page load */
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', cwtDeferApply);
+        } else {
+            cwtDeferApply();
+        }
+
+        /* Re-apply after WooCommerce AJAX events (deferred to run AFTER WC's own handlers) */
+        if (typeof jQuery !== 'undefined') {
+            jQuery(document.body).on('updated_checkout', cwtDeferApply);
+            jQuery(document.body).on('country_to_state_changed', cwtDeferApply);
+        }
+
+        /* MutationObserver: catch any DOM replacement WooCommerce does on the checkout form */
+        var checkoutForm = document.querySelector('form.checkout, form.woocommerce-checkout');
+        if (checkoutForm && typeof MutationObserver !== 'undefined') {
+            var observer = new MutationObserver(function(mutations) {
+                var dominated = false;
+                for (var i = 0; i < mutations.length; i++) {
+                    if (mutations[i].addedNodes.length > 0) {
+                        dominated = true;
+                        break;
+                    }
+                }
+                if (dominated) {
+                    cwtDeferApply();
+                }
+            });
+            observer.observe(checkoutForm, { childList: true, subtree: true });
         }
     })();
     </script>
     <?php
 }
+
