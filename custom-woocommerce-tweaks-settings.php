@@ -75,7 +75,7 @@ function custom_woocommerce_tweaks_settings_page() {
     $restrict_email_domains_setting   = get_option( 'restrict_email_domains_setting', 'no' );
 
     // Retrieve checkout fields settings.
-    $enable_checkout_fields_customizer = get_option( 'cwt_enable_checkout_fields_customizer', 'no' );
+    $enable_checkout_fields_customizer = get_option( 'cwt_enable_checkout_fields_customizer', 'yes' );
     $checkout_field_definitions        = function_exists( 'cwt_get_checkout_field_definitions' ) ? cwt_get_checkout_field_definitions() : array();
     $checkout_field_settings           = function_exists( 'cwt_get_checkout_fields_settings' ) ? cwt_get_checkout_fields_settings() : array();
 ?>
