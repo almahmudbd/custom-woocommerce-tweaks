@@ -32,6 +32,13 @@ All features are individually toggleable from **WooCommerce > Tweaks Settings**.
 9. **Restrict Registration Email Domains**  
    Only allows registration with gmail, yahoo, hotmail or outlook addresses. Applies to WordPress registration, WooCommerce registration, and the admin "Add New User" screen.
 
+10. **Checkout Fields Customizer (Billing, Shipping & Order Notes)**  
+    Full control over WooCommerce checkout form fields from a dedicated tab under **WooCommerce > Tweaks Settings**:
+    - Enable or disable (show/hide) core billing, shipping, and order notes fields.
+    - Toggle field required state (Default, Required, or Optional).
+    - Customize field labels, placeholder texts, and helper notes/descriptions.
+    - Smooth integration with WooCommerce dynamic address localization and validation.
+
 > Note: payment gateway and shipping method IDs are hardcoded to this site's setup — edit them in `custom-woocommerce-tweaks-core.php` before using elsewhere.
 
 ## Installation
@@ -41,8 +48,9 @@ All features are individually toggleable from **WooCommerce > Tweaks Settings**.
 
 ## Settings
 1. Go to **WooCommerce > Tweaks Settings** in the WordPress admin panel.
-2. Customize the options:
-   - Enable or disable each feature as per your requirements.
+2. Customize the options across two organized tabs:
+   - **General Tweaks:** Toggle individual general tweaks (COD rules, discounts, phone validation, etc.).
+   - **Checkout Fields Customizer:** Master switch and organized tables to customize billing, shipping, and order notes fields.
 
 ## Support
 Fix it yourself please :) 

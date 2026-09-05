@@ -17,3 +17,9 @@ CLAUDE.md
 .gemini/
 .cline/
 .agents/
+
+# Auto-generated AI agent exclusions
+.cursor/
+.kiro/
+.vscode/
+*.mcp.json
