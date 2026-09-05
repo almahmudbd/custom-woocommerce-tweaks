@@ -97,6 +97,16 @@ add_action('woocommerce_checkout_process', 'validate_woocommerce_billing_phone_d
 function validate_woocommerce_billing_phone_digits()
 {
     if (get_option('validate_mobile_number_setting', 'no') === 'yes') {
+        // Skip validation if billing_phone is disabled by checkout fields customizer
+        if ( function_exists( 'cwt_get_checkout_fields_settings' ) && function_exists( 'cwt_is_customizer_active' ) ) {
+            if ( cwt_is_customizer_active() ) {
+                $field_settings = cwt_get_checkout_fields_settings();
+                if ( isset( $field_settings['billing_phone']['enabled'] ) && ! (int) $field_settings['billing_phone']['enabled'] ) {
+                    return;
+                }
+            }
+        }
+
         $billing_phone = isset($_POST['billing_phone']) ? sanitize_text_field($_POST['billing_phone']) : '';
 
         if (!empty($billing_phone)) {
