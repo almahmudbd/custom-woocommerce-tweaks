@@ -129,21 +129,46 @@ function cwt_get_checkout_field_definitions() {
  */
 function cwt_get_checkout_fields_settings() {
     $saved = get_option( 'cwt_checkout_fields_settings', array() );
-    if ( ! is_array( $saved ) ) {
-        $saved = array();
-    }
-    return $saved;
+    return is_array( $saved ) ? $saved : array();
 }
 
 /**
- * Override WooCommerce checkout fields on frontend.
+ * Check if checkout fields customizer is active.
  *
- * @param array $fields Existing checkout fields.
- * @return array
+ * @return bool
  */
+function cwt_is_customizer_active() {
+    return get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) === 'yes';
+}
+
+/**
+ * Shared helper: apply saved overrides (label, placeholder, description, required)
+ * to a single field's args array. Returns modified args.
+ *
+ * @param array  $args  Field arguments (label, placeholder, required, etc.).
+ * @param array  $conf  Saved config for this field from cwt_checkout_fields_settings.
+ * @return array Modified field arguments.
+ */
+function cwt_apply_field_overrides( $args, $conf ) {
+    if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
+        $args['label'] = sanitize_text_field( $conf['label'] );
+    }
+    if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
+        $args['placeholder'] = sanitize_text_field( $conf['placeholder'] );
+    }
+    if ( isset( $conf['description'] ) && trim( $conf['description'] ) !== '' ) {
+        $args['description'] = sanitize_text_field( $conf['description'] );
+    }
+    if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
+        $args['required'] = ( $conf['required'] === 'yes' );
+    }
+    return $args;
+}
+
+// ─── Hook 1: Main checkout fields override ─────────────────────────────────────
 add_filter( 'woocommerce_checkout_fields', 'cwt_custom_override_checkout_fields', 9999 );
 function cwt_custom_override_checkout_fields( $fields ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+    if ( ! cwt_is_customizer_active() ) {
         return $fields;
     }
 
@@ -154,344 +179,67 @@ function cwt_custom_override_checkout_fields( $fields ) {
         if ( ! isset( $fields[ $section ] ) || ! is_array( $fields[ $section ] ) ) {
             continue;
         }
-
         foreach ( $section_info['fields'] as $field_key => $default_info ) {
-            $field_settings = isset( $settings[ $field_key ] ) ? $settings[ $field_key ] : array();
+            $conf = isset( $settings[ $field_key ] ) ? $settings[ $field_key ] : array();
 
-            // Check if field is disabled
-            $is_enabled = isset( $field_settings['enabled'] ) ? (int) $field_settings['enabled'] : 1;
-            if ( ! $is_enabled ) {
-                if ( isset( $fields[ $section ][ $field_key ] ) ) {
-                    unset( $fields[ $section ][ $field_key ] );
-                }
+            // Disabled → remove field entirely
+            if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
+                unset( $fields[ $section ][ $field_key ] );
                 continue;
             }
-
             if ( ! isset( $fields[ $section ][ $field_key ] ) ) {
                 continue;
             }
 
-            // Custom Label
-            if ( isset( $field_settings['label'] ) && trim( $field_settings['label'] ) !== '' ) {
-                $fields[ $section ][ $field_key ]['label'] = sanitize_text_field( $field_settings['label'] );
-            }
-
-            // Custom Placeholder
-            if ( isset( $field_settings['placeholder'] ) && trim( $field_settings['placeholder'] ) !== '' ) {
-                $fields[ $section ][ $field_key ]['placeholder'] = sanitize_text_field( $field_settings['placeholder'] );
-            }
-
-            // Custom Note / Description
-            if ( isset( $field_settings['description'] ) && trim( $field_settings['description'] ) !== '' ) {
-                $fields[ $section ][ $field_key ]['description'] = sanitize_text_field( $field_settings['description'] );
-            }
-
-            // Custom Required state
-            if ( isset( $field_settings['required'] ) && $field_settings['required'] !== 'default' ) {
-                $fields[ $section ][ $field_key ]['required'] = ( $field_settings['required'] === 'yes' );
-            }
+            $fields[ $section ][ $field_key ] = cwt_apply_field_overrides(
+                $fields[ $section ][ $field_key ],
+                $conf
+            );
         }
     }
 
     return $fields;
 }
 
-/**
- * Override billing fields directly via woocommerce_billing_fields filter.
- * Ensures billing_phone, billing_email, and address fields are customized
- * regardless of whether themes or plugins call get_address_fields() or checkout_fields.
- */
-add_filter( 'woocommerce_billing_fields', 'cwt_custom_override_billing_fields', 9999, 2 );
-function cwt_custom_override_billing_fields( $fields, $country = '' ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $fields;
-    }
-
-    $settings = cwt_get_checkout_fields_settings();
-    if ( empty( $settings ) || ! is_array( $fields ) ) {
-        return $fields;
-    }
-
-    foreach ( $fields as $field_key => $field_args ) {
-        if ( isset( $settings[ $field_key ] ) ) {
-            $conf = $settings[ $field_key ];
-
-            if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
-                unset( $fields[ $field_key ] );
-                continue;
-            }
-
-            if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-                $fields[ $field_key ]['label'] = sanitize_text_field( $conf['label'] );
-            }
-
-            if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-                $fields[ $field_key ]['placeholder'] = sanitize_text_field( $conf['placeholder'] );
-            }
-
-            if ( isset( $conf['description'] ) && trim( $conf['description'] ) !== '' ) {
-                $fields[ $field_key ]['description'] = sanitize_text_field( $conf['description'] );
-            }
-
-            if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
-                $fields[ $field_key ]['required'] = ( $conf['required'] === 'yes' );
-            }
-        }
-    }
-
-    return $fields;
-}
-
-/**
- * Override shipping fields directly via woocommerce_shipping_fields filter.
- */
-add_filter( 'woocommerce_shipping_fields', 'cwt_custom_override_shipping_fields', 9999, 2 );
-function cwt_custom_override_shipping_fields( $fields, $country = '' ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $fields;
-    }
-
-    $settings = cwt_get_checkout_fields_settings();
-    if ( empty( $settings ) || ! is_array( $fields ) ) {
-        return $fields;
-    }
-
-    foreach ( $fields as $field_key => $field_args ) {
-        if ( isset( $settings[ $field_key ] ) ) {
-            $conf = $settings[ $field_key ];
-
-            if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
-                unset( $fields[ $field_key ] );
-                continue;
-            }
-
-            if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-                $fields[ $field_key ]['label'] = sanitize_text_field( $conf['label'] );
-            }
-
-            if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-                $fields[ $field_key ]['placeholder'] = sanitize_text_field( $conf['placeholder'] );
-            }
-
-            if ( isset( $conf['description'] ) && trim( $conf['description'] ) !== '' ) {
-                $fields[ $field_key ]['description'] = sanitize_text_field( $conf['description'] );
-            }
-
-            if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
-                $fields[ $field_key ]['required'] = ( $conf['required'] === 'yes' );
-            }
-        }
-    }
-
-    return $fields;
-}
-
-/**
- * Filter form field args right before rendering to ensure theme templates don't bypass customizations.
- */
-add_filter( 'woocommerce_form_field_args', 'cwt_custom_override_form_field_args', 9999, 3 );
-function cwt_custom_override_form_field_args( $args, $key, $value ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $args;
-    }
-
-    $settings = cwt_get_checkout_fields_settings();
-    if ( isset( $settings[ $key ] ) ) {
-        $conf = $settings[ $key ];
-
-        if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-            $args['label'] = sanitize_text_field( $conf['label'] );
-        }
-
-        if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-            $args['placeholder'] = sanitize_text_field( $conf['placeholder'] );
-        }
-
-        if ( isset( $conf['description'] ) && trim( $conf['description'] ) !== '' ) {
-            $args['description'] = sanitize_text_field( $conf['description'] );
-        }
-
-        if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
-            $args['required'] = ( $conf['required'] === 'yes' );
-        }
-    }
-
-    return $args;
-}
-
-/**
- * Prevent disabled fields from outputting HTML if a theme template renders them directly.
- */
-add_filter( 'woocommerce_form_field', 'cwt_custom_filter_form_field_html', 9999, 4 );
-function cwt_custom_filter_form_field_html( $field_html, $key, $args, $value ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $field_html;
-    }
-
-    $settings = cwt_get_checkout_fields_settings();
-    if ( isset( $settings[ $key ]['enabled'] ) && ! (int) $settings[ $key ]['enabled'] ) {
-        return '';
-    }
-
-    return $field_html;
-}
-
-/**
- * Sync WooCommerce core phone field setting dynamically.
- */
-add_filter( 'option_woocommerce_checkout_phone_field', 'cwt_sync_core_phone_field_option', 9999 );
-function cwt_sync_core_phone_field_option( $value ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $value;
-    }
-    $settings = cwt_get_checkout_fields_settings();
-    if ( isset( $settings['billing_phone'] ) ) {
-        $conf = $settings['billing_phone'];
-        if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
-            return 'hidden';
-        }
-        if ( isset( $conf['required'] ) ) {
-            if ( 'yes' === $conf['required'] ) {
-                return 'required';
-            } elseif ( 'no' === $conf['required'] ) {
-                return 'optional';
-            }
-        }
-    }
-    return $value;
-}
-
-/**
- * Sync WooCommerce core company field setting dynamically.
- */
-add_filter( 'option_woocommerce_checkout_company_field', 'cwt_sync_core_company_field_option', 9999 );
-function cwt_sync_core_company_field_option( $value ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $value;
-    }
-    $settings = cwt_get_checkout_fields_settings();
-    if ( isset( $settings['billing_company'] ) ) {
-        $conf = $settings['billing_company'];
-        if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
-            return 'hidden';
-        }
-        if ( isset( $conf['required'] ) ) {
-            if ( 'yes' === $conf['required'] ) {
-                return 'required';
-            } elseif ( 'no' === $conf['required'] ) {
-                return 'optional';
-            }
-        }
-    }
-    return $value;
-}
-
-/**
- * Filter default address fields so dynamic country/address changes respect custom settings.
- *
- * @param array $fields
- * @return array
- */
+// ─── Hook 2: Default address fields (prevents country-change validation reset) ─
 add_filter( 'woocommerce_default_address_fields', 'cwt_custom_override_default_address_fields', 9999 );
 function cwt_custom_override_default_address_fields( $fields ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+    if ( ! cwt_is_customizer_active() ) {
         return $fields;
     }
 
-    $settings = cwt_get_checkout_fields_settings();
-    if ( empty( $settings ) ) {
-        return $fields;
-    }
-
-    // Mapping of core address keys to billing setting keys
-    $address_keys = array(
-        'first_name',
-        'last_name',
-        'company',
-        'address_1',
-        'address_2',
-        'city',
-        'state',
-        'postcode',
-        'country',
-    );
+    $settings     = cwt_get_checkout_fields_settings();
+    $address_keys = array( 'first_name', 'last_name', 'company', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country' );
 
     foreach ( $address_keys as $key ) {
         $billing_key = 'billing_' . $key;
         if ( ! isset( $settings[ $billing_key ] ) || ! isset( $fields[ $key ] ) ) {
             continue;
         }
-
         $conf = $settings[ $billing_key ];
 
-        // If billing field is disabled, make sure default address validation doesn't block checkout
         if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
             $fields[ $key ]['required'] = false;
-        } elseif ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
-            $fields[ $key ]['required'] = ( $conf['required'] === 'yes' );
         }
-
-        if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-            $fields[ $key ]['label'] = sanitize_text_field( $conf['label'] );
-        }
-
-        if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-            $fields[ $key ]['placeholder'] = sanitize_text_field( $conf['placeholder'] );
-        }
-
-        if ( isset( $conf['description'] ) && trim( $conf['description'] ) !== '' ) {
-            $fields[ $key ]['description'] = sanitize_text_field( $conf['description'] );
-        }
+        $fields[ $key ] = cwt_apply_field_overrides( $fields[ $key ], $conf );
     }
 
     return $fields;
 }
 
-/**
- * Conditionally disable the entire Order Notes section if order_comments is disabled.
- */
-add_filter( 'woocommerce_enable_order_notes_field', 'cwt_conditionally_disable_order_notes_section', 9999 );
-function cwt_conditionally_disable_order_notes_section( $enabled ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $enabled;
-    }
-
-    $settings = cwt_get_checkout_fields_settings();
-    if ( isset( $settings['order_comments']['enabled'] ) && ! (int) $settings['order_comments']['enabled'] ) {
-        return false;
-    }
-
-    return $enabled;
-}
-
-/**
- * Override country locale data so WooCommerce's address-i18n.js uses our custom
- * labels/placeholders/required states instead of reverting to defaults on country change.
- *
- * This is the fix for the "label flashes custom then reverts to English" issue.
- * WooCommerce JS fetches locale data and re-applies it on country change.
- */
+// ─── Hook 3: Country locale data (prevents JS from overwriting labels) ──────────
 add_filter( 'woocommerce_get_country_locale', 'cwt_override_country_locale', 9999 );
 function cwt_override_country_locale( $locales ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+    if ( ! cwt_is_customizer_active() ) {
         return $locales;
     }
 
-    $settings = cwt_get_checkout_fields_settings();
-    if ( empty( $settings ) ) {
-        return $locales;
-    }
-
-    // Map billing field keys to their locale short keys
+    $settings         = cwt_get_checkout_fields_settings();
     $locale_field_map = array(
-        'billing_first_name' => 'first_name',
-        'billing_last_name'  => 'last_name',
-        'billing_company'    => 'company',
-        'billing_address_1'  => 'address_1',
-        'billing_address_2'  => 'address_2',
-        'billing_city'       => 'city',
-        'billing_state'      => 'state',
-        'billing_postcode'   => 'postcode',
+        'billing_first_name' => 'first_name', 'billing_last_name' => 'last_name',
+        'billing_company'    => 'company',    'billing_address_1' => 'address_1',
+        'billing_address_2'  => 'address_2',  'billing_city'      => 'city',
+        'billing_state'      => 'state',      'billing_postcode'  => 'postcode',
     );
 
     $overrides = array();
@@ -499,25 +247,24 @@ function cwt_override_country_locale( $locales ) {
         if ( ! isset( $settings[ $billing_key ] ) ) {
             continue;
         }
-        $conf = $settings[ $billing_key ];
-        $field_override = array();
+        $conf  = $settings[ $billing_key ];
+        $entry = array();
 
         if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-            $field_override['label'] = sanitize_text_field( $conf['label'] );
+            $entry['label'] = sanitize_text_field( $conf['label'] );
         }
         if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-            $field_override['placeholder'] = sanitize_text_field( $conf['placeholder'] );
+            $entry['placeholder'] = sanitize_text_field( $conf['placeholder'] );
         }
         if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
-            $field_override['required'] = ( $conf['required'] === 'yes' );
+            $entry['required'] = ( $conf['required'] === 'yes' );
         }
         if ( isset( $conf['enabled'] ) && ! (int) $conf['enabled'] ) {
-            $field_override['hidden']   = true;
-            $field_override['required'] = false;
+            $entry['hidden']   = true;
+            $entry['required'] = false;
         }
-
-        if ( ! empty( $field_override ) ) {
-            $overrides[ $locale_key ] = $field_override;
+        if ( ! empty( $entry ) ) {
+            $overrides[ $locale_key ] = $entry;
         }
     }
 
@@ -525,15 +272,12 @@ function cwt_override_country_locale( $locales ) {
         return $locales;
     }
 
-    // Inject our overrides into every country's locale
-    foreach ( $locales as $country_code => $country_locale ) {
-        foreach ( $overrides as $locale_key => $override_data ) {
-            if ( ! isset( $locales[ $country_code ][ $locale_key ] ) ) {
-                $locales[ $country_code ][ $locale_key ] = array();
-            }
-            $locales[ $country_code ][ $locale_key ] = array_merge(
-                $locales[ $country_code ][ $locale_key ],
-                $override_data
+    // Inject into every country's locale
+    foreach ( $locales as $cc => &$country_locale ) {
+        foreach ( $overrides as $lk => $od ) {
+            $country_locale[ $lk ] = array_merge(
+                isset( $country_locale[ $lk ] ) ? $country_locale[ $lk ] : array(),
+                $od
             );
         }
     }
@@ -541,86 +285,42 @@ function cwt_override_country_locale( $locales ) {
     return $locales;
 }
 
-/**
- * Override the default country locale (used when no specific country locale is found).
- */
-add_filter( 'woocommerce_get_country_locale_default', 'cwt_override_country_locale_default', 9999 );
-function cwt_override_country_locale_default( $defaults ) {
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
-        return $defaults;
+// ─── Hook 4: Order notes toggle ─────────────────────────────────────────────────
+add_filter( 'woocommerce_enable_order_notes_field', 'cwt_conditionally_disable_order_notes_section', 9999 );
+function cwt_conditionally_disable_order_notes_section( $enabled ) {
+    if ( ! cwt_is_customizer_active() ) {
+        return $enabled;
     }
-
     $settings = cwt_get_checkout_fields_settings();
-    if ( empty( $settings ) ) {
-        return $defaults;
+    if ( isset( $settings['order_comments']['enabled'] ) && ! (int) $settings['order_comments']['enabled'] ) {
+        return false;
     }
-
-    $locale_field_map = array(
-        'billing_first_name' => 'first_name',
-        'billing_last_name'  => 'last_name',
-        'billing_company'    => 'company',
-        'billing_address_1'  => 'address_1',
-        'billing_address_2'  => 'address_2',
-        'billing_city'       => 'city',
-        'billing_state'      => 'state',
-        'billing_postcode'   => 'postcode',
-    );
-
-    foreach ( $locale_field_map as $billing_key => $locale_key ) {
-        if ( ! isset( $settings[ $billing_key ] ) ) {
-            continue;
-        }
-        $conf = $settings[ $billing_key ];
-
-        if ( ! isset( $defaults[ $locale_key ] ) ) {
-            $defaults[ $locale_key ] = array();
-        }
-
-        if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-            $defaults[ $locale_key ]['label'] = sanitize_text_field( $conf['label'] );
-        }
-        if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-            $defaults[ $locale_key ]['placeholder'] = sanitize_text_field( $conf['placeholder'] );
-        }
-        if ( isset( $conf['required'] ) && $conf['required'] !== 'default' ) {
-            $defaults[ $locale_key ]['required'] = ( $conf['required'] === 'yes' );
-        }
-    }
-
-    return $defaults;
+    return $enabled;
 }
 
-/**
- * Output frontend JS on checkout to forcefully re-apply custom labels after
- * WooCommerce's AJAX update_checkout completes. This catches phone, email,
- * and any fields not covered by locale data.
- */
+// ─── Hook 5: Frontend JS (re-applies labels after AJAX for phone, email, etc.) ─
 add_action( 'wp_footer', 'cwt_checkout_fields_frontend_js', 9999 );
 function cwt_checkout_fields_frontend_js() {
     if ( ! function_exists( 'is_checkout' ) || ! is_checkout() || is_wc_endpoint_url() ) {
         return;
     }
-    if ( get_option( 'cwt_enable_checkout_fields_customizer', 'yes' ) !== 'yes' ) {
+    if ( ! cwt_is_customizer_active() ) {
         return;
     }
 
-    $settings = cwt_get_checkout_fields_settings();
-    if ( empty( $settings ) ) {
-        return;
-    }
-
-    // Build JS data for fields that have custom labels/placeholders
+    $settings     = cwt_get_checkout_fields_settings();
     $js_overrides = array();
+
     foreach ( $settings as $field_key => $conf ) {
-        $override = array();
+        $o = array();
         if ( isset( $conf['label'] ) && trim( $conf['label'] ) !== '' ) {
-            $override['label'] = sanitize_text_field( $conf['label'] );
+            $o['label'] = sanitize_text_field( $conf['label'] );
         }
         if ( isset( $conf['placeholder'] ) && trim( $conf['placeholder'] ) !== '' ) {
-            $override['placeholder'] = sanitize_text_field( $conf['placeholder'] );
+            $o['placeholder'] = sanitize_text_field( $conf['placeholder'] );
         }
-        if ( ! empty( $override ) ) {
-            $js_overrides[ $field_key ] = $override;
+        if ( ! empty( $o ) ) {
+            $js_overrides[ $field_key ] = $o;
         }
     }
 
@@ -629,49 +329,26 @@ function cwt_checkout_fields_frontend_js() {
     }
     ?>
     <script type="text/javascript">
-    (function() {
-        var cwtOverrides = <?php echo wp_json_encode( $js_overrides ); ?>;
-
-        function cwtApplyOverrides() {
-            for (var fieldKey in cwtOverrides) {
-                if (!cwtOverrides.hasOwnProperty(fieldKey)) continue;
-                var data = cwtOverrides[fieldKey];
-                var field = document.getElementById(fieldKey + '_field');
-                if (!field) continue;
-
-                if (data.label) {
-                    var labelEl = field.querySelector('label');
-                    if (labelEl) {
-                        // Preserve the <abbr> (required asterisk) if present
-                        var abbr = labelEl.querySelector('abbr');
-                        labelEl.textContent = data.label;
-                        if (abbr) {
-                            labelEl.appendChild(document.createTextNode(' '));
-                            labelEl.appendChild(abbr);
-                        }
-                    }
+    (function(){
+        var O = <?php echo wp_json_encode( $js_overrides ); ?>;
+        function apply(){
+            for(var k in O){
+                if(!O.hasOwnProperty(k))continue;
+                var f=document.getElementById(k+'_field');
+                if(!f)continue;
+                if(O[k].label){
+                    var l=f.querySelector('label');
+                    if(l){var a=l.querySelector('abbr');l.textContent=O[k].label;if(a){l.appendChild(document.createTextNode(' '));l.appendChild(a);}}
                 }
-
-                if (data.placeholder) {
-                    var input = field.querySelector('input, textarea, select');
-                    if (input && (input.tagName === 'INPUT' || input.tagName === 'TEXTAREA')) {
-                        input.setAttribute('placeholder', data.placeholder);
-                    }
+                if(O[k].placeholder){
+                    var i=f.querySelector('input,textarea');
+                    if(i&&(i.tagName==='INPUT'||i.tagName==='TEXTAREA'))i.setAttribute('placeholder',O[k].placeholder);
                 }
             }
         }
-
-        // Apply immediately
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', cwtApplyOverrides);
-        } else {
-            cwtApplyOverrides();
-        }
-
-        // Re-apply after WooCommerce AJAX events
-        if (typeof jQuery !== 'undefined') {
-            jQuery(document.body).on('updated_checkout', cwtApplyOverrides);
-            jQuery(document.body).on('country_to_state_changed', cwtApplyOverrides);
+        document.readyState==='loading'?document.addEventListener('DOMContentLoaded',apply):apply();
+        if(typeof jQuery!=='undefined'){
+            jQuery(document.body).on('updated_checkout country_to_state_changed',apply);
         }
     })();
     </script>
