@@ -7,7 +7,7 @@
  * 2. Checkout Page (on the right half, above the mini-cart / order review section).
  *
  * All texts, templates, and numbers can be configured/hardcoded below.
- * Buttons can be toggled on/off in WooCommerce > Tweaks Settings > WhatsApp Buttons.
+ * Buttons can be toggled on/off in WooCommerce > Tweaks Settings (General Tweaks tab).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,7 +27,7 @@ if ( ! defined( 'CWT_WA_PRODUCT_TEXT' ) ) {
 
 if ( ! defined( 'CWT_WA_PRODUCT_TEMPLATE' ) ) {
 	// Placeholders: {name}, {url}, {price}, {sku}, {id}
-	define( 'CWT_WA_PRODUCT_TEMPLATE', "আসসালামু আলাইকুম, এই পণ্যটি অর্ডার করতে চাচ্ছি। \"{name}\"\n\n{url}" );
+	define( 'CWT_WA_PRODUCT_TEMPLATE', "আসসালামু আলাইকুম, আমি এই পণ্যটি অর্ডার করতে চাচ্ছি। \n\"{name}\"\n{url}" );
 }
 
 // 2. Checkout Page Button (Right Half, Above Mini-Cart)
@@ -37,7 +37,7 @@ if ( ! defined( 'CWT_WA_CHECKOUT_TEXT' ) ) {
 
 if ( ! defined( 'CWT_WA_CHECKOUT_TEMPLATE' ) ) {
 	// Placeholders: {items}, {total}
-	define( 'CWT_WA_CHECKOUT_TEMPLATE', "আসসালামু আলাইকুম, অর্ডার করতে একটু হেল্প দরকার।\n\nআমার কার্টে থাকা পণ্যগুলো নিতে চাচ্ছি:\n\n{items}\n\nমোট: {total}\n" );
+	define( 'CWT_WA_CHECKOUT_TEMPLATE', "আসসালামু আলাইকুম, অর্ডার করতে একটু হেল্প দরকার।\nএই পণ্যগুলো নিতে চাচ্ছি:\n\n{items}\n\nমোট: {total}\n" );
 }
 
 /* ====  WhatsApp Core Implementation  ======== */
@@ -166,8 +166,17 @@ if ( ! class_exists( 'CWT_WhatsApp' ) ) {
 			$product_url  = (string) get_permalink( $product->get_id() );
 			$label        = CWT_WA_PRODUCT_TEXT;
 
+			$initial_msg = strtr(
+				CWT_WA_PRODUCT_TEMPLATE,
+				array(
+					'{name}' => $product_name,
+					'{url}'  => $product_url,
+				)
+			);
+			$initial_url = self::build_url( $initial_msg );
+
 			echo '<div class="wcwa-product-wrap">';
-			echo '<a id="wcwa-product-button" class="wcwa-button wcwa-button--product" href="#" target="_blank" rel="noopener noreferrer" style="display:inline-flex;width:auto;max-width:max-content;" data-wcwa-name="' . esc_attr( $product_name ) . '" data-wcwa-url="' . esc_url( $product_url ) . '">';
+			echo '<a id="wcwa-product-button" class="wcwa-button wcwa-button--product" href="' . esc_url( $initial_url ) . '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;width:auto;max-width:max-content;" data-wcwa-name="' . esc_attr( $product_name ) . '" data-wcwa-url="' . esc_url( $product_url ) . '">';
 			echo self::icon_svg(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo '<span class="wcwa-button__label">' . esc_html( $label ) . '</span>';
 			echo '</a>';
@@ -240,13 +249,12 @@ if ( ! class_exists( 'CWT_WhatsApp' ) ) {
 			$prod_enabled = self::is_enabled( 'product' );
 			$chk_enabled  = self::is_enabled( 'checkout' );
 
-			if ( ( $on_product && ! $prod_enabled ) || ( $on_checkout && ! $chk_enabled ) ) {
-				if ( ! $prod_enabled && ! $chk_enabled ) {
-					return;
-				}
+			// Skip the enqueue entirely if both buttons are off — no DOM targets exist.
+			if ( ! $prod_enabled && ! $chk_enabled ) {
+				return;
 			}
 
-			$version = '3.3';
+			$version = '3.4';
 
 			wp_enqueue_style(
 				'cwt-whatsapp-frontend',
@@ -267,8 +275,7 @@ if ( ! class_exists( 'CWT_WhatsApp' ) ) {
 				'phone'           => self::get_phone(),
 				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 				'checkoutNonce'   => wp_create_nonce( self::NONCE_ACTION ),
-				'productEnabled'  => $prod_enabled,
-				'checkoutEnabled' => $chk_enabled,
+				'productTemplate' => CWT_WA_PRODUCT_TEMPLATE,
 			);
 
 			wp_add_inline_script(

@@ -48,17 +48,8 @@ function custom_woocommerce_tweaks_settings_page() {
 
             update_option( 'cwt_checkout_fields_settings', $clean_settings );
             echo '<div class="updated"><p>Checkout fields settings saved successfully!</p></div>';
-        } elseif ( isset( $_POST['cwt_settings_tab'] ) && $_POST['cwt_settings_tab'] === 'whatsapp' ) {
-            // Save WhatsApp Buttons settings (simple on/off toggles)
-            $prod_enabled = isset( $_POST['cwt_wa_product_enabled'] ) ? 'yes' : 'no';
-            $chk_enabled  = isset( $_POST['cwt_wa_checkout_enabled'] ) ? 'yes' : 'no';
-
-            update_option( 'cwt_wa_product_enabled', $prod_enabled );
-            update_option( 'cwt_wa_checkout_enabled', $chk_enabled );
-
-            echo '<div class="updated"><p>' . esc_html__( 'WhatsApp settings saved successfully!', 'custom-woocommerce-tweaks' ) . '</p></div>';
         } else {
-            // Save General Tweaks settings
+            // Save General Tweaks settings (also handles WhatsApp button toggles).
             update_option( 'disable_cod_for_courier', isset( $_POST['disable_cod_for_courier'] ) ? 'yes' : 'no' );
             update_option( 'disable_password_email', isset( $_POST['disable_password_email'] ) ? 'yes' : 'no' );
             update_option( 'enable_clickable_phone', isset( $_POST['enable_clickable_phone'] ) ? 'yes' : 'no' );
@@ -68,6 +59,8 @@ function custom_woocommerce_tweaks_settings_page() {
             update_option( 'disable_cart_page', isset( $_POST['disable_cart_page'] ) ? 'yes' : 'no' );
             update_option( 'show_full_cart_on_checkout', isset( $_POST['show_full_cart_on_checkout'] ) ? 'yes' : 'no' );
             update_option( 'restrict_email_domains_setting', isset( $_POST['restrict_email_domains_setting'] ) ? 'yes' : 'no' );
+            update_option( 'cwt_wa_product_enabled', isset( $_POST['cwt_wa_product_enabled'] ) ? 'yes' : 'no' );
+            update_option( 'cwt_wa_checkout_enabled', isset( $_POST['cwt_wa_checkout_enabled'] ) ? 'yes' : 'no' );
             echo '<div class="updated"><p>Settings saved successfully!</p></div>';
         }
     }
@@ -89,8 +82,8 @@ function custom_woocommerce_tweaks_settings_page() {
     $checkout_field_settings           = function_exists( 'cwt_get_checkout_fields_settings' ) ? cwt_get_checkout_fields_settings() : array();
 
     // Retrieve WhatsApp button toggles (on/off).
-    $wa_prod_en = class_exists( 'CWT_WhatsApp' ) ? CWT_WhatsApp::is_enabled( 'product' ) : ( get_option( 'cwt_wa_product_enabled', 'yes' ) === 'yes' );
-    $wa_chk_en  = class_exists( 'CWT_WhatsApp' ) ? CWT_WhatsApp::is_enabled( 'checkout' ) : ( get_option( 'cwt_wa_checkout_enabled', 'yes' ) === 'yes' );
+    $wa_prod_en = get_option( 'cwt_wa_product_enabled', 'yes' ) === 'yes';
+    $wa_chk_en  = get_option( 'cwt_wa_checkout_enabled', 'yes' ) === 'yes';
 
 ?>
     <div class="wrap cwt-settings-wrap">
@@ -102,9 +95,6 @@ function custom_woocommerce_tweaks_settings_page() {
             </a>
             <a href="?page=custom-woocommerce-tweaks-settings&tab=checkout_fields" class="nav-tab <?php echo $current_tab === 'checkout_fields' ? 'nav-tab-active' : ''; ?>">
                 <?php esc_html_e( 'Checkout Fields Customizer', 'custom-woocommerce-tweaks' ); ?>
-            </a>
-            <a href="?page=custom-woocommerce-tweaks-settings&tab=whatsapp" class="nav-tab <?php echo $current_tab === 'whatsapp' ? 'nav-tab-active' : ''; ?>">
-                <?php esc_html_e( 'WhatsApp Buttons', 'custom-woocommerce-tweaks' ); ?>
             </a>
         </nav>
 
@@ -134,6 +124,38 @@ function custom_woocommerce_tweaks_settings_page() {
                         <td>
                             <input type="checkbox" name="enable_clickable_phone" <?php checked( $enable_clickable_phone, 'yes' ); ?> />
                             <label for="enable_clickable_phone">Make phone numbers clickable for WhatsApp</label>
+                        </td>
+                    </tr>
+                    <!-- WhatsApp Button: Single Product Page -->
+                    <tr valign="top">
+                        <th scope="row">
+                            <label for="cwt_wa_product_enabled"><?php esc_html_e( 'WhatsApp Button: Product Page', 'custom-woocommerce-tweaks' ); ?></label>
+                        </th>
+                        <td>
+                            <input type="checkbox"
+                                   id="cwt_wa_product_enabled"
+                                   name="cwt_wa_product_enabled"
+                                   value="yes"
+                                   <?php checked( $wa_prod_en, true ); ?> />
+                            <label for="cwt_wa_product_enabled">
+                                <?php esc_html_e( 'Show WhatsApp button below Add to Cart on single product pages', 'custom-woocommerce-tweaks' ); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <!-- WhatsApp Button: Checkout Page -->
+                    <tr valign="top">
+                        <th scope="row">
+                            <label for="cwt_wa_checkout_enabled"><?php esc_html_e( 'WhatsApp Button: Checkout Page', 'custom-woocommerce-tweaks' ); ?></label>
+                        </th>
+                        <td>
+                            <input type="checkbox"
+                                   id="cwt_wa_checkout_enabled"
+                                   name="cwt_wa_checkout_enabled"
+                                   value="yes"
+                                   <?php checked( $wa_chk_en, true ); ?> />
+                            <label for="cwt_wa_checkout_enabled">
+                                <?php esc_html_e( 'Show WhatsApp button on the checkout page (above the order review)', 'custom-woocommerce-tweaks' ); ?>
+                            </label>
                         </td>
                     </tr>
                     <!-- Option to remove Updraft from admin bar -->
@@ -333,57 +355,6 @@ function custom_woocommerce_tweaks_settings_page() {
                     });
                 });
             </script>
-        <?php elseif ( $current_tab === 'whatsapp' ) : ?>
-            <div style="background: #fff; padding: 15px 20px; border-left: 4px solid #25D366; box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-bottom: 20px;">
-                <h2 style="margin-top: 0; color: #1d2327; font-size: 1.25rem;">
-                    <?php esc_html_e( 'WhatsApp Buttons', 'custom-woocommerce-tweaks' ); ?>
-                </h2>
-                <p class="description">
-                    <?php esc_html_e( 'Enable or disable the WhatsApp buttons below. (Phone number, button labels, and message templates are configured directly at the top of custom-woocommerce-tweaks-whatsapp.php).', 'custom-woocommerce-tweaks' ); ?>
-                </p>
-            </div>
-
-            <form method="post" action="?page=custom-woocommerce-tweaks-settings&tab=whatsapp">
-                <input type="hidden" name="cwt_settings_tab" value="whatsapp" />
-
-                <table class="form-table" role="presentation">
-                    <!-- Product Page WhatsApp Button Toggle -->
-                    <tr valign="top">
-                        <th scope="row">
-                            <label for="cwt_wa_product_enabled"><?php esc_html_e( 'Product Page Button', 'custom-woocommerce-tweaks' ); ?></label>
-                        </th>
-                        <td>
-                            <input type="checkbox"
-                                   id="cwt_wa_product_enabled"
-                                   name="cwt_wa_product_enabled"
-                                   value="yes"
-                                   <?php checked( $wa_prod_en, true ); ?> />
-                            <label for="cwt_wa_product_enabled">
-                                <?php esc_html_e( 'Enable WhatsApp button on single product pages (below Add to Cart)', 'custom-woocommerce-tweaks' ); ?>
-                            </label>
-                        </td>
-                    </tr>
-
-                    <!-- Checkout Page WhatsApp Button Toggle -->
-                    <tr valign="top">
-                        <th scope="row">
-                            <label for="cwt_wa_checkout_enabled"><?php esc_html_e( 'Checkout Page Button', 'custom-woocommerce-tweaks' ); ?></label>
-                        </th>
-                        <td>
-                            <input type="checkbox"
-                                   id="cwt_wa_checkout_enabled"
-                                   name="cwt_wa_checkout_enabled"
-                                   value="yes"
-                                   <?php checked( $wa_chk_en, true ); ?> />
-                            <label for="cwt_wa_checkout_enabled">
-                                <?php esc_html_e( 'Enable WhatsApp button on checkout page (right-hand half, above minicart)', 'custom-woocommerce-tweaks' ); ?>
-                            </label>
-                        </td>
-                    </tr>
-                </table>
-
-                <?php submit_button( __( 'Save WhatsApp Settings', 'custom-woocommerce-tweaks' ) ); ?>
-            </form>
         <?php endif; ?>
     </div>
     <?php

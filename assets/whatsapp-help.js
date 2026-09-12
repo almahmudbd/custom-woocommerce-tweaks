@@ -37,45 +37,75 @@
 	if ( $productBtn.length ) {
 		var parentName = String( $productBtn.data( 'wcwa-name' ) || '' );
 		var parentUrl  = String( $productBtn.data( 'wcwa-url' ) || '' );
+		var template   = String( data.productTemplate || 'আসসালামু আলাইকুম, আমি এই পণ্যটি অর্ডার করতে চাচ্ছি। \n"{name}"\n{url}' );
 
-		function buildProductMessage( attrs ) {
-			var lines = [
-				'আসসালামু আলাইকুম, "' + parentName + '" এই পণ্যটি অর্ডার করতে চাচ্ছি।',
-				''
-			];
-
-			if ( attrs && typeof attrs === 'object' ) {
-				var keys = Object.keys( attrs );
-				if ( keys.length ) {
-					lines.push( 'নির্বাচিত অপশন:' );
-					keys.forEach( function ( key ) {
-						if ( ! Object.prototype.hasOwnProperty.call( attrs, key ) ) {
-							return;
-						}
-						var label = String( key )
-							.replace( /^attribute_pa_/, '' )
-							.replace( /^attribute_/, '' );
-						if ( label.length ) {
-							label = label.charAt( 0 ).toUpperCase() + label.slice( 1 );
-						}
-						lines.push( '• ' + label + ': ' + attrs[ key ] );
-					} );
-					lines.push( '' );
+		function getVariationLabel( key, val ) {
+			// 1. Try to read human-readable label from the selected option in the variation form
+			var $select = $( 'form.variations_form select[name="' + key + '"]' );
+			if ( $select.length ) {
+				var $selectedOption = $select.find( 'option:selected' );
+				if ( $selectedOption.length && $selectedOption.val() ) {
+					var text = $selectedOption.text().trim();
+					if ( text && ! /^(choose|select|\-\-)/i.test( text ) && ! text.includes( 'নির্বাচন' ) ) {
+						return text;
+					}
 				}
 			}
 
-			lines.push( parentUrl );
-			return lines.join( '\n' );
+			// 2. Try WoodMart / custom active swatch element
+			var $swatch = $( 'form.variations_form [data-value="' + val + '"].selected, form.variations_form [data-value="' + val + '"].active' );
+			if ( $swatch.length ) {
+				var swatchTitle = $swatch.attr( 'title' ) || $swatch.data( 'title' ) || $swatch.text().trim();
+				if ( swatchTitle ) {
+					return swatchTitle;
+				}
+			}
+
+			// 3. Fallback: decodeURIComponent on URL-encoded slug (%e0%a7%a8%e0%a7%ab... -> ২৫০গ্রাম)
+			try {
+				var decoded = decodeURIComponent( String( val ) );
+				return decoded.replace( /[-_]/g, ' ' );
+			} catch ( e ) {
+				return String( val );
+			}
 		}
 
-		function applyProductLink( attrs ) {
-			$productBtn.attr( 'href', buildWaLink( buildProductMessage( attrs ) ) );
+		function buildProductMessage( variationSummary ) {
+			var displayName = parentName;
+			if ( variationSummary ) {
+				displayName += ' (' + variationSummary + ')';
+			}
+
+			return template
+				.replace( /\{name\}/g, displayName )
+				.replace( /\{url\}/g, parentUrl );
+		}
+
+		function applyProductLink( variationSummary ) {
+			$productBtn.attr( 'href', buildWaLink( buildProductMessage( variationSummary ) ) );
 		}
 
 		applyProductLink( null );
 
 		$( document ).on( 'found_variation.wcwa', 'form.variations_form', function ( event, variation ) {
-			applyProductLink( variation && variation.attributes ? variation.attributes : null );
+			if ( ! variation || ! variation.attributes ) {
+				applyProductLink( null );
+				return;
+			}
+
+			var labels = [];
+			var attrs  = variation.attributes;
+			Object.keys( attrs ).forEach( function ( key ) {
+				var val = attrs[ key ];
+				if ( val ) {
+					var label = getVariationLabel( key, val );
+					if ( label ) {
+						labels.push( label );
+					}
+				}
+			} );
+
+			applyProductLink( labels.length ? labels.join( ', ' ) : null );
 		} );
 
 		$( document ).on( 'reset_data.wcwa', 'form.variations_form', function () {

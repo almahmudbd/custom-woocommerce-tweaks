@@ -34,5 +34,6 @@ GEMINI.md
 .brainsync/memory.jsonl
 .brainsync/sync-state.json
 .brainsync/.context-key
-
 working/
+*.mcp.json*
+*.zip

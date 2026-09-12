@@ -39,6 +39,9 @@ All features are individually toggleable from **WooCommerce > Tweaks Settings**.
     - Customize field labels, placeholder texts, and helper notes/descriptions.
     - Smooth integration with WooCommerce dynamic address localization and validation.
 
+11. **WhatsApp Click-to-Chat Buttons**  
+    Adds a WhatsApp button to single product pages (below Add to Cart) and to the checkout page (above the order review). Both are toggleable from the General Tweaks tab. Phone number, button labels, and message templates are configured at the top of `custom-woocommerce-tweaks-whatsapp.php`.
+
 > Note: payment gateway and shipping method IDs are hardcoded to this site's setup — edit them in `custom-woocommerce-tweaks-core.php` before using elsewhere.
 
 ## Installation
@@ -49,8 +52,10 @@ All features are individually toggleable from **WooCommerce > Tweaks Settings**.
 ## Settings
 1. Go to **WooCommerce > Tweaks Settings** in the WordPress admin panel.
 2. Customize the options across two organized tabs:
-   - **General Tweaks:** Toggle individual general tweaks (COD rules, discounts, phone validation, etc.).
+   - **General Tweaks:** Toggle individual general tweaks (COD rules, discounts, phone validation, WhatsApp click-to-chat, etc.).
    - **Checkout Fields Customizer:** Master switch and organized tables to customize billing, shipping, and order notes fields.
+
+> Phone number, button labels, and message templates for the WhatsApp buttons live at the top of `custom-woocommerce-tweaks-whatsapp.php` (defined as constants).
 
 ## Support
 Fix it yourself please :) 
