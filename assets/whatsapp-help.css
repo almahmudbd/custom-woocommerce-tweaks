@@ -1,0 +1,145 @@
+/**
+ * WhatsApp Button for WooCommerce — frontend styles.
+ *
+ * Override `--wcwa-bg` / `--wcwa-bg-hover` to recolor the button from your
+ * theme without editing plugin files.
+ */
+
+.wcwa-button {
+	--wcwa-bg: #25D366;
+	--wcwa-bg-hover: #1ebe5d;
+
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	margin: 1rem 0;
+	padding: 0.75rem 1.25rem;
+	background-color: var(--wcwa-bg);
+	color: #ffffff;
+	font-weight: 600;
+	font-size: 1rem;
+	line-height: 1.2;
+	text-decoration: none;
+	border: 0;
+	border-radius: 4px;
+	cursor: pointer;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+	transition: background-color 0.15s ease, transform 0.05s ease;
+	vertical-align: middle;
+}
+
+.wcwa-button:hover,
+.wcwa-button:focus {
+	background-color: var(--wcwa-bg-hover);
+	color: #ffffff;
+	text-decoration: none;
+	outline: 0;
+}
+
+.wcwa-button:focus-visible {
+	outline: 2px solid #ffffff;
+	outline-offset: 2px;
+	box-shadow: 0 0 0 4px var(--wcwa-bg);
+}
+
+.wcwa-button:active {
+	transform: translateY(1px);
+}
+
+.wcwa-icon {
+	width: 1.25em;
+	height: 1.25em;
+	flex: 0 0 auto;
+}
+
+.wcwa-button--block {
+	display: flex;
+	width: 100%;
+}
+
+.wcwa-button__label {
+	white-space: normal;
+}
+
+/* Place nicely next to WooCommerce / WoodMart native buttons. */
+.single-product .wcwa-button,
+.woocommerce-cart .wcwa-button,
+.woocommerce-checkout .wcwa-button {
+	margin-left: 0.5rem;
+}
+
+/* Sit on its own line under the Add-to-Cart form. Smaller and
+ * content-sized so it never stretches full-width inside flex/grid containers. */
+.wcwa-product-wrap {
+	display: block;
+	width: 100%;
+	margin-top: 0.6rem;
+	margin-bottom: 0.4rem;
+	clear: both;
+}
+
+.wcwa-button--product,
+#wcwa-product-button,
+.single-product .wcwa-button--product,
+.single-product form.cart .wcwa-button--product {
+	display: inline-flex !important;
+	width: auto !important;
+	max-width: max-content !important;
+	flex: 0 0 auto !important;
+	align-self: flex-start !important;
+	margin: 0.5rem 0 !important;
+	margin-left: 0 !important;
+	padding: 0.45rem 0.85rem !important;
+	font-size: 0.85rem !important;
+	line-height: 1.2;
+	box-sizing: border-box;
+}
+
+.wcwa-product-wrap .wcwa-button--product {
+	margin: 0 !important;
+}
+
+.wcwa-button--product .wcwa-icon {
+	width: 1.15em;
+	height: 1.15em;
+}
+
+/* Checkout button sits on the right-hand half, above the order review / minicart. */
+.wcwa-checkout-wrap {
+	display: block;
+	width: 100%;
+	margin: 0 0 1.25rem 0;
+	box-sizing: border-box;
+}
+
+.wcwa-checkout-wrap .wcwa-button {
+	width: 100%;
+	font-size: 0.95rem;
+	padding: 0.75rem 1rem;
+	margin: 0;
+	box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+	.wcwa-checkout-wrap {
+		margin: 0.75rem 0 1rem 0;
+	}
+
+	.wcwa-checkout-wrap .wcwa-button {
+		width: 100%;
+		padding: 0.75rem 0.85rem;
+		font-size: 0.9rem;
+	}
+
+	/* Product button stays compact on small screens too. */
+	.wcwa-button--product,
+	#wcwa-product-button,
+	.single-product form.cart .wcwa-button--product {
+		display: inline-flex !important;
+		width: auto !important;
+		max-width: max-content !important;
+		padding: 0.45rem 0.75rem !important;
+		font-size: 0.825rem !important;
+	}
+}
